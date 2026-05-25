@@ -1,0 +1,20 @@
+{
+  "spectrogram": {
+    "sample_rate": 22050,
+    "n_mel_channels": 80,
+    "n_fft": 1024,
+    "hop_length": 256,
+    "win_length": 1024
+  },
+  "model": {
+    "encoder_n_layers": 4,
+    "encoder_head": 2,
+    "encoder_conv1d_filter_size": 1024,
+    "decoder_n_layers": 4,
+    "decoder_head": 2,
+    "decoder_conv1d_filter_size": 1024,
+    "variance_predictor_filter_size": 256,
+    "variance_predictor_kernel_size": 3,
+    "dropout": 0.1
+  }
+}
