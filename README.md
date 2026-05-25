@@ -38,6 +38,7 @@ ttcs/
 │   ├── slicer.py              # webvtt subtitle parser & pydub audio segment slicer
 │   ├── annotator_ui.ipynb     # Jupyter/Colab notebook with interactive annotation UI (ipywidgets)
 │   ├── merge_and_split.py     # Merges all CSV files in a folder and splits train/val
+│   ├── merge_drive_data.py    # Merges Drive metadata sheets and wavs folders (excluding trash)
 │   ├── normalizer.py          # Regex & num2words text normalizer
 │   └── g2p.py                 # Vietnamese Grapheme-to-Phoneme converter (viphoneme wrapper & rules)
 ├── denoising/                 # Audio quality improvement / Speech Enhancement
@@ -114,14 +115,22 @@ Upload the folder `processed_data/` to Google Drive or OneDrive, and run `data_p
 * **Hoàn tác (Undo)**: Reverts the last action, restoring audio file positions and removing CSV logging entries automatically.
 
 ### 3. Merging and Splitting Dataset
-Once annotation is complete, run the merger to combine multiple CSV sheets (from team members A and B chẵn/lẻ annotations) and generate training validation text indices:
-```bash
-python data_pipeline/merge_and_split.py --input_dir processed_data --output_dir processed_data --split_ratio 0.95
-```
+Once annotation is complete, you can merge sheets and audio folders using either tool below:
+
+* **Option A: Standard Folder Merger** (combines multiple CSVs in a single folder and splits indices):
+  ```bash
+  python data_pipeline/merge_and_split.py --input_dir processed_data --output_dir processed_data --split_ratio 0.95
+  ```
+
+* **Option B: Google Drive / OneDrive Sync Merger** (specifically merges metadata noise, verified, and recovered sheets, copies WAV audio from multiple folders like `wavs` and `wavs_need_denoise` while explicitly ignoring `wavs_trash`, updates all paths to unified format, and generates train/val splits):
+  ```bash
+  python data_pipeline/merge_drive_data.py --input_dir path/to/sync/processed_data --output_dir merged_dataset --split_ratio 0.95
+  ```
+
 This generates:
-* `processed_data/final_metadata.csv` (All unique annotated rows combined)
-* `processed_data/train.txt` (95% shuffled train records formatted as `audio_path|text`)
-* `processed_data/val.txt` (5% validation records)
+* `merged_dataset/final_metadata.csv` (All unique non-trash annotated rows combined and aligned)
+* `merged_dataset/train.txt` (95% shuffled train records formatted as `audio_path|text`)
+* `merged_dataset/val.txt` (5% validation records)
 
 ### 4. Denoising / Speech Enhancement
 Run denoising batch models on raw audio samples located in `processed_data/wavs_need_denoise/`:

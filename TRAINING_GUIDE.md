@@ -48,17 +48,23 @@ python denoising/deepfilter.py --input_dir processed_data/wavs_need_denoise --ou
 
 ## 🔗 BƯỚC 4: GỘP SỔ TAY VÀ PHÂN CHIA TẬP TRAIN / VALIDATE
 
-Khi cả nhóm đã hoàn tất duyệt và khử nhiễu, tải toàn bộ các file CSV về chung một thư mục trên máy tính chạy code và tiến hành gộp dữ liệu:
+Khi cả nhóm đã hoàn tất duyệt và khử nhiễu, hãy tải toàn bộ thư mục `processed_data` từ Drive/OneDrive về máy tính và tiến hành gộp dữ liệu. Nhóm có hai lựa chọn công cụ gộp:
 
+### Lựa chọn A: Gộp nhanh dữ liệu cục bộ (Chỉ gộp CSV)
+Nếu các file âm thanh đã được bạn gộp thủ công vào thư mục `processed_data/wavs`, chỉ cần gộp các file CSV:
 ```bash
 python data_pipeline/merge_and_split.py --input_dir processed_data --output_dir processed_data --split_ratio 0.95 --seed 42
 ```
-* **Hành động**:
-  1. Script quét toàn bộ các file CSV trong thư mục.
-  2. Gộp `metadata_verified.csv` và `metadata_noise.csv` (các file ồn nay đã được lọc sạch).
-  3. Sử dụng cấu trúc `drop_duplicates` để loại bỏ các dòng trùng lặp hoàn toàn.
-  4. Trộn ngẫu nhiên (Shuffle) với seed cố định `42` để đảm bảo tính khách quan và lặp lại kết quả.
-  5. Phân chia tỉ lệ **95% dữ liệu cho tập Huấn luyện** (`train.txt`) và **5% dữ liệu cho tập Xác thực** (`val.txt`) phục vụ kiểm soát lỗi Overfitting.
+
+### Lựa chọn B: Gộp tự động toàn bộ dữ liệu Drive (Khuyên dùng)
+Công cụ này sẽ quét tất cả các file metadata (`verified`, `noise`, `recovered`, `final`), tự động gộp và loại trùng lặp. Đồng thời quét qua các thư mục audio, sao chép toàn bộ file `.wav` trừ thư mục chứa chữ `trash` (ví dụ `wavs_trash`) sang thư mục đầu ra thống nhất, tự động đồng bộ lại đường dẫn trong file text:
+```bash
+python data_pipeline/merge_drive_data.py --input_dir path/to/sync/processed_data --output_dir merged_dataset --split_ratio 0.95 --seed 42
+```
+* **Kết quả đầu ra**:
+  * Thư mục `merged_dataset/wavs` chứa toàn bộ file âm thanh sạch từ `wavs` và `wavs_need_denoise` (Đã loại bỏ các file rác trong `wavs_trash`).
+  * `merged_dataset/final_metadata.csv` (Sổ tay dữ liệu tổng hợp sạch).
+  * `merged_dataset/train.txt` & `merged_dataset/val.txt` (Danh sách tập train/val định dạng chuẩn `wavs/file.wav|text` sẵn sàng để đẩy vào VITS).
 
 ---
 
