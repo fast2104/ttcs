@@ -1,0 +1,22 @@
+# Checkpoints and Models (Too large for GitHub)
+checkpoints/*.pth
+checkpoints/*.bin
+checkpoints/*.tar
+checkpoints/logs/
+
+# Python Cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Datasets and Outputs
+raw_data/
+processed_data/
+merged_dataset/
+outputs/
+
+# Environment
+.venv/
+env/
+venv/
+.env
