@@ -160,7 +160,10 @@ def train_and_fine_tune(config_path, train_list, val_list, output_dir, checkpoin
             for idx, start_id in enumerate(slice_ids):
                 # hop size ratio is 256 (upsample_rates: 8 * 8 * 2 * 2 = 256)
                 wave_start = start_id * hop_length
-                wave_slices.append(wave[idx, wave_start:wave_start + target_segment_size])
+                slice_w = wave[idx, wave_start:wave_start + target_segment_size]
+                if slice_w.size(0) < target_segment_size:
+                    slice_w = F.pad(slice_w, (0, target_segment_size - slice_w.size(0)), mode='constant', value=0.0)
+                wave_slices.append(slice_w)
             wave_sliced = torch.stack(wave_slices, dim=0).unsqueeze(1)
             
             # Compare synthesized segment with original segment
