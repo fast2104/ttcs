@@ -29,8 +29,21 @@ def load_checkpoint(checkpoint_path, model, optimizer=None):
     except TypeError:
         checkpoint = torch.load(checkpoint_path, map_location='cpu')
     
-    # Load model weights
-    state_dict = checkpoint['model']
+    # Load model weights (hỗ trợ cả định dạng gốc 'model' và định dạng PyTorch Lightning 'state_dict')
+    state_dict = checkpoint.get('model', checkpoint.get('state_dict', None))
+    if state_dict is None:
+        print("[-] Error: Checkpoint does not contain 'model' or 'state_dict' keys.")
+        return None
+        
+    # Loại bỏ tiền tố 'model.' nếu nạp checkpoint từ PyTorch Lightning (ví dụ của Piper)
+    clean_state_dict = {}
+    for k, v in state_dict.items():
+        if k.startswith('model.'):
+            clean_state_dict[k[6:]] = v
+        else:
+            clean_state_dict[k] = v
+    state_dict = clean_state_dict
+    
     model_state = model.state_dict()
     
     # Filter state_dict keys to allow loading from models with slight configuration changes
