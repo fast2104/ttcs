@@ -14,6 +14,7 @@ import argparse
 import torch
 from torch import nn
 from torch import optim
+from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
