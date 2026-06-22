@@ -175,6 +175,21 @@ def main():
     else:
         print("[*] Running locally, using existing merged_dataset or processed_data.")
 
+    # Tạo symlink thư mục wavs ra ngoài thư mục root để train.py tìm thấy các tệp âm thanh (wavs/file.wav)
+    if in_colab:
+        local_wavs_path = os.path.join(local_dataset_dir, "wavs")
+        if os.path.exists(local_wavs_path):
+            if not os.path.exists("wavs"):
+                try:
+                    os.symlink(local_wavs_path, "wavs")
+                    print("[+] Created symlink for wavs directory to root.")
+                except Exception as e:
+                    print(f"[!] Warning: Failed to create symlink: {e}")
+            else:
+                print("[+] Symlink or directory 'wavs' already exists at root.")
+        else:
+            print(f"[!] Warning: Could not find wavs directory inside {local_dataset_dir}")
+
     # 5. Kích hoạt huấn luyện VITS
     print("\n=== STEP 4: Launching Training ===")
     config_path = "configs/vits_config.json"

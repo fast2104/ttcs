@@ -158,6 +158,11 @@ class SynthesizerTrn(nn.Module):
         
         # Flows
         self.flow = ResidualCouplingLayer(inter_channels, hidden_channels, 5, 1, 4)
+        
+        # Calculate hop length dynamically from upsample rates
+        self.hop_length = 1
+        for r in upsample_rates:
+            self.hop_length *= r
 
     def forward(self, x, x_lengths, y, y_lengths):
         # 1. Encode text
@@ -175,7 +180,7 @@ class SynthesizerTrn(nn.Module):
         z_p = self.flow(z, y_mask, reverse=False)
         
         # Align lengths or slice for generator (during training)
-        z_sliced, slice_ids = rand_slice_segments(z, y_lengths, self.segment_size)
+        z_sliced, slice_ids = rand_slice_segments(z, y_lengths, self.segment_size // self.hop_length)
         o = self.dec(z_sliced)
         
         return o, slice_ids, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
