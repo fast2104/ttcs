@@ -168,7 +168,12 @@ def train_and_fine_tune(config_path, train_list, val_list, output_dir, checkpoin
             
             # 2. KL Divergence loss on prior/posterior spaces (Flow alignment)
             # D_kl(q(z|y) || p(z|x))
-            kl_loss = torch.sum(logs_p - logs_q - 0.5 + ((z_p - m_p) ** 2) * torch.exp(-2.0 * logs_p) * 0.5) / torch.sum(y_mask)
+            # Interpolate prior parameters (m_p, logs_p) to match posterior size (z_p, logs_q)
+            t_audio = z_p.size(2)
+            m_p_up = F.interpolate(m_p, size=t_audio, mode='nearest')
+            logs_p_up = F.interpolate(logs_p, size=t_audio, mode='nearest')
+            
+            kl_loss = torch.sum(logs_p_up - logs_q - 0.5 + ((z_p - m_p_up) ** 2) * torch.exp(-2.0 * logs_p_up) * 0.5) / torch.sum(y_mask)
             
             # Total Loss
             loss = loss_recon + 1.0 * kl_loss
@@ -213,7 +218,13 @@ def train_and_fine_tune(config_path, train_list, val_list, output_dir, checkpoin
                 # Check validation sample rate
                 # Compare full reconstructed output with padded input waves
                 loss_recon = F.l1_loss(o, wave.unsqueeze(1)[:, :, :o.size(2)])
-                kl_loss = torch.sum(logs_p - logs_q - 0.5 + ((z_p - m_p) ** 2) * torch.exp(-2.0 * logs_p) * 0.5) / torch.sum(y_mask)
+                
+                # Interpolate prior parameters for validation
+                t_audio_val = z_p.size(2)
+                m_p_up_val = F.interpolate(m_p, size=t_audio_val, mode='nearest')
+                logs_p_up_val = F.interpolate(logs_p, size=t_audio_val, mode='nearest')
+                
+                kl_loss = torch.sum(logs_p_up_val - logs_q - 0.5 + ((z_p - m_p_up_val) ** 2) * torch.exp(-2.0 * logs_p_up_val) * 0.5) / torch.sum(y_mask)
                 val_loss += (loss_recon + kl_loss).item()
                 
         avg_val_loss = val_loss / len(val_loader) if len(val_loader) > 0 else 0.0
