@@ -83,25 +83,38 @@ def main():
         checkpoint_dir = "checkpoints"
         
     os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    # Đường dẫn kiểm tra các loại checkpoint
+    latest_checkpoint_path = os.path.join(checkpoint_dir, "vits_latest.pth")
     base_checkpoint_path = os.path.join(checkpoint_dir, "vits_base.pth")
     
+    resume_checkpoint_path = None
     use_resume = False
     
-    # Cách 1: Ưu tiên tìm checkpoint trên Google Drive do người dùng tự tải lên (Bypass lỗi 401 HF)
-    drive_checkpoint_path = os.path.join(drive_dataset_dir, "vits_base.pth")
-    if in_colab and os.path.exists(drive_checkpoint_path):
-        print(f"[+] Found pre-trained checkpoint on Google Drive: {drive_checkpoint_path}")
-        print("[*] Copying checkpoint to Colab environment...")
-        import shutil
-        try:
-            shutil.copy(drive_checkpoint_path, base_checkpoint_path)
-            if os.path.exists(base_checkpoint_path) and os.path.getsize(base_checkpoint_path) > 1000:
-                print("[+] Successfully loaded pre-trained checkpoint from Google Drive!")
-                use_resume = True
-        except Exception as e:
-            print(f"[-] Failed to copy checkpoint from Drive: {e}")
-
-    # Cách 2: Nếu không có trên Drive, tự động thử tải từ Link Public của cộng đồng
+    # Ưu tiên 1: Tự động khôi phục từ checkpoint tự train mới nhất (vits_latest.pth)
+    if os.path.exists(latest_checkpoint_path) and os.path.getsize(latest_checkpoint_path) > 1000:
+        print(f"[+] Found existing self-trained checkpoint: {latest_checkpoint_path}")
+        print("[*] Resuming training from your latest progress!")
+        resume_checkpoint_path = latest_checkpoint_path
+        use_resume = True
+        
+    # Ưu tiên 2: Tìm checkpoint nền (vits_base.pth) trên Drive nếu chưa từng train
+    if not use_resume:
+        drive_checkpoint_path = os.path.join(drive_dataset_dir, "vits_base.pth")
+        if in_colab and os.path.exists(drive_checkpoint_path):
+            print(f"[+] Found pre-trained checkpoint on Google Drive: {drive_checkpoint_path}")
+            print("[*] Copying checkpoint to Colab environment...")
+            import shutil
+            try:
+                shutil.copy(drive_checkpoint_path, base_checkpoint_path)
+                if os.path.exists(base_checkpoint_path) and os.path.getsize(base_checkpoint_path) > 1000:
+                    print("[+] Successfully loaded pre-trained checkpoint from Google Drive!")
+                    resume_checkpoint_path = base_checkpoint_path
+                    use_resume = True
+            except Exception as e:
+                print(f"[-] Failed to copy checkpoint from Drive: {e}")
+    
+    # Ưu tiên 3: Nếu không có cả hai, tự động tải pre-trained từ Hugging Face
     if not use_resume:
         vits_public_url = "https://huggingface.co/dang1412/vits-vietnamese/resolve/main/G_920000.pth"
         
@@ -113,6 +126,7 @@ def main():
             
             if success and os.path.exists(base_checkpoint_path) and os.path.getsize(base_checkpoint_path) > 1000:
                 print("[+] Successfully downloaded base checkpoint from Hugging Face.")
+                resume_checkpoint_path = base_checkpoint_path
                 use_resume = True
             else:
                 print("[!] Warning: Could not download from Hugging Face (auth 401/private).")
@@ -123,6 +137,7 @@ def main():
                     os.remove(base_checkpoint_path)
         else:
             print("[+] Pre-trained checkpoint already exists.")
+            resume_checkpoint_path = base_checkpoint_path
             use_resume = True
 
     # 4. Gộp và Chuẩn bị dữ liệu từ Google Drive (Đã gộp từ trước, chỉ cần copy vào Colab để tăng tốc độ I/O)
@@ -221,8 +236,8 @@ def main():
         f"--batch_size 8"
     )
     
-    if use_resume:
-        train_cmd += f" --resume {base_checkpoint_path}"
+    if use_resume and resume_checkpoint_path:
+        train_cmd += f" --resume {resume_checkpoint_path}"
         
     run_command(train_cmd)
 
