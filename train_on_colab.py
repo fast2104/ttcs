@@ -75,7 +75,13 @@ def main():
 
     # 3. Tải Pre-trained Checkpoint VITS
     print("\n=== STEP 2: Downloading Pre-trained Checkpoint VITS ===")
-    checkpoint_dir = "checkpoints"
+    
+    # Nếu chạy trên Colab, lưu checkpoint trực tiếp vào Google Drive để tránh bị mất khi ngắt kết nối
+    if in_colab:
+        checkpoint_dir = os.path.join(drive_dataset_dir, "checkpoints")
+    else:
+        checkpoint_dir = "checkpoints"
+        
     os.makedirs(checkpoint_dir, exist_ok=True)
     base_checkpoint_path = os.path.join(checkpoint_dir, "vits_base.pth")
     
